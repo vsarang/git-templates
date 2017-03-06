@@ -1,0 +1,40 @@
+#!/bin/sh
+DIM='\e[2m'
+GREEN='\e[32m'
+RED='\e[31m'
+PLAIN='\e[0m'
+
+abort_message="${RED}Push aborted.${PLAIN}\n"
+hook_path=`git rev-parse --git-dir`/hooks/personal/`basename $0`
+if [ -f $hook_path ]
+then
+  if ! $hook_path $@
+  then
+    printf "$hook_path failed\n"
+    printf "$abort_message"
+    exit 1
+  fi
+fi
+
+protected_branch='master'
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+push_command=`ps -ocommand= -p $PPID`
+if [ $protected_branch = $current_branch ]
+then
+  if [[ $push_command =~ force|delete|-f ]]; then
+    printf "\n"
+    printf "${RED}*****************************************************************${PLAIN}\n"
+    printf "${RED}Prevented force-push to master. This is a very dangerous command.${PLAIN}\n"
+    printf "${RED}*****************************************************************${PLAIN}\n"
+    printf "\n"
+    exit 1
+  fi
+
+  if ! grunt eslint unit
+  then
+    printf "$abort_message"
+    exit 1
+  fi
+else
+  exit 0
+fi

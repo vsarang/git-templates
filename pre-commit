@@ -1,0 +1,30 @@
+#!/bin/sh
+DIM='\e[2m'
+GREEN='\e[32m'
+RED='\e[31m'
+PLAIN='\e[0m'
+
+abort_message="${RED}Commit aborted.${PLAIN}\n"
+hook_path=`git rev-parse --git-dir`/hooks/personal/`basename $0`
+if [ -f $hook_path ]
+then
+  if ! $hook_path $@
+  then
+    printf "$hook_path failed\n"
+    printf "$abort_message"
+    exit 1
+  fi
+fi
+
+branch_name=$(git branch | grep '*' | sed 's/* //')
+if [[ $branch_name =~ 'no branch' ]]
+then
+  exit 0
+else
+  
+  if ! grunt eslint
+  then
+    printf "$abort_message"
+    exit 1
+  fi
+fi
